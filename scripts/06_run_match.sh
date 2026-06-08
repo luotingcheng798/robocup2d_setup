@@ -5,7 +5,12 @@
 #   ./run_match.sh -o /path/to/opponent_dir         # vs 指定对手
 #   ./run_match.sh -o /path/to/opp -s start.sh      # 指定对手 start.sh 名
 
-set -e
+set -euo pipefail
+
+TEAM_NAME="${ROBOCUP2D_TEAM_NAME:-wxxychyzz}"
+TEAM_DIR="${ROBOCUP2D_TEAM_DIR:-$HOME/$TEAM_NAME}"
+MONITOR_APP="${ROBOCUP2D_MONITOR_APP:-$HOME/rcssmonitor.AppImage}"
+MONITOR_NAME="$(basename "$MONITOR_APP")"
 
 OPP_DIR=""
 OPP_SCRIPT="start.sh"
@@ -24,9 +29,9 @@ while [ $# -gt 0 ]; do
 done
 
 # 清理
-killall -9 rcssserver wxxychyzz_Player wxxychyzz_Coach 2>/dev/null || true
+killall -9 rcssserver "${TEAM_NAME}_Player" "${TEAM_NAME}_Coach" 2>/dev/null || true
 killall -9 sample_player sample_coach 2>/dev/null || true
-killall -9 rcssmonitor.AppImage 2>/dev/null || true
+killall -9 "$MONITOR_NAME" 2>/dev/null || true
 sleep 2
 rm -f /tmp/incomplete.* /tmp/*.rcg /tmp/*.rcl /tmp/rcssserver.log /tmp/wxxy.log /tmp/opp.log
 
@@ -44,21 +49,26 @@ done
 # 2. Monitor
 if [ "$NO_MONITOR" = "0" ]; then
     echo "[2/4] 启动监视器..."
-    export DISPLAY=:0
+    export DISPLAY=${DISPLAY:-:0}
     XAUTH_FILE=$(ls /run/user/$(id -u)/.mutter-Xwaylandauth.* 2>/dev/null | head -1)
     if [ -n "$XAUTH_FILE" ]; then
         export XAUTHORITY="$XAUTH_FILE"
-        ~/rcssmonitor.AppImage > /tmp/monitor.log 2>&1 &
-        sleep 2
+        if [ -x "$MONITOR_APP" ]; then
+            "$MONITOR_APP" > /tmp/monitor.log 2>&1 &
+            sleep 2
+        else
+            echo "⚠️ 未找到监视器可执行文件: $MONITOR_APP"
+            echo "请先运行: ~/robocup2d_setup/scripts/05_install_monitor.sh"
+        fi
     else
         echo "  ⚠️ 未找到 X auth 文件，跳过监视器"
-        echo "  请在桌面终端运行: ~/rcssmonitor.AppImage"
+        echo "  请在桌面终端运行: $MONITOR_APP"
     fi
 fi
 
-# 3. wxxychyzz
-echo "[3/4] 启动 wxxychyzz..."
-~/wxxychyzz/start.sh > /tmp/wxxy.log 2>&1 &
+# 3. 我方球队
+echo "[3/4] 启动 ${TEAM_NAME}..."
+"$TEAM_DIR/start.sh" > /tmp/wxxy.log 2>&1 &
 sleep 8
 
 # 4. 对手
@@ -78,7 +88,7 @@ if [ -n "$OPP_DIR" ] && [ -d "$OPP_DIR" ]; then
     cd "$OPP_DIR" && bash "$OPP_SCRIPT" > /tmp/opp.log 2>&1 &
     sleep 5
 else
-    echo "[4/4] 无对手（仅 wxxychyzz 上场）"
+    echo "[4/4] 无对手（仅 ${TEAM_NAME} 上场）"
 fi
 
 echo ""
@@ -88,4 +98,4 @@ echo "实时看比分:"
 echo "  watch -n 5 'grep \"referee goal\" /tmp/incomplete.rcl 2>/dev/null | grep -v \"kick\\|catch\\|offside\" | tail -10'"
 echo ""
 echo "终止:"
-echo "  ~/wxxychyzz/kill.sh && killall -9 rcssserver rcssmonitor.AppImage"
+echo "  ${TEAM_DIR}/kill.sh && killall -9 rcssserver ${MONITOR_NAME}"

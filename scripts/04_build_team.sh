@@ -1,25 +1,31 @@
 #!/bin/bash
-# Phase 4: 编译 helios-base 球队，重命名为 wxxychyzz 并部署
+# Phase 4: 编译 helios-base 球队，重命名为目标队名并部署
 
-set -e
+set -euo pipefail
 
-SRC_DIR="$HOME/robocup2d/team"
-DEPLOY_DIR="$HOME/wxxychyzz"
+WORK_DIR="${ROBOCUP2D_WORK_DIR:-$HOME/robocup2d}"
+SRC_DIR="${ROBOCUP2D_TEAM_SRC_DIR:-$WORK_DIR/team}"
+TEAM_NAME="${ROBOCUP2D_TEAM_NAME:-wxxychyzz}"
+DEPLOY_DIR="${ROBOCUP2D_TEAM_DIR:-$HOME/$TEAM_NAME}"
+HELIOS_REPO="${ROBOCUP2D_HELIOS_REPO:-https://github.com/helios-base/helios-base.git}"
+INSTALL_PREFIX="${ROBOCUP2D_INSTALL_PREFIX:-/usr/local}"
+GIT_DEPTH="${ROBOCUP2D_GIT_DEPTH:-1}"
+
 cd "$SRC_DIR"
 
-echo "[Phase 4/5] 克隆 helios-base..."
-if [ ! -d "wxxychyzz-src" ]; then
-    git clone --depth=1 https://github.com/helios-base/helios-base.git wxxychyzz-src
+echo "[Phase 4/5] 克隆/更新 helios-base..."
+if [ ! -d "${TEAM_NAME}-src" ]; then
+    git clone --depth="$GIT_DEPTH" "$HELIOS_REPO" "${TEAM_NAME}-src"
 fi
-cd wxxychyzz-src
+cd "${TEAM_NAME}-src"
 
 # 改队名
-sed -i 's/HELIOS_base/wxxychyzz/g' src/start.sh.in src/player.conf src/coach.conf 2>/dev/null || true
+sed -i "s/HELIOS_base/${TEAM_NAME}/g" src/start.sh.in src/player.conf src/coach.conf 2>/dev/null || true
 
 # 编译
 mkdir -p build && cd build
 echo "[Phase 4/5] 配置 cmake..."
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX"
 
 echo "[Phase 4/5] 编译球队（约 5-10 分钟）..."
 make -j$(nproc)
@@ -28,9 +34,9 @@ make -j$(nproc)
 echo "[Phase 4/5] 部署到 $DEPLOY_DIR..."
 mkdir -p "$DEPLOY_DIR"/{lib,data}
 
-cp build/bin/sample_player "$DEPLOY_DIR/wxxychyzz_Player"
-cp build/bin/sample_coach "$DEPLOY_DIR/wxxychyzz_Coach"
-strip "$DEPLOY_DIR/wxxychyzz_Player" "$DEPLOY_DIR/wxxychyzz_Coach" 2>/dev/null || true
+cp build/bin/sample_player "$DEPLOY_DIR/${TEAM_NAME}_Player"
+cp build/bin/sample_coach "$DEPLOY_DIR/${TEAM_NAME}_Coach"
+strip "$DEPLOY_DIR/${TEAM_NAME}_Player" "$DEPLOY_DIR/${TEAM_NAME}_Coach" 2>/dev/null || true
 
 cp build/bin/player.conf "$DEPLOY_DIR/data/"
 cp build/bin/coach.conf "$DEPLOY_DIR/data/"
@@ -39,9 +45,16 @@ cp -r build/bin/formations-keeper "$DEPLOY_DIR/data/" 2>/dev/null || true
 cp -r build/bin/formations-taker "$DEPLOY_DIR/data/" 2>/dev/null || true
 
 # 捆绑 librcsc
-cp /usr/local/lib/librcsc.so.19 "$DEPLOY_DIR/lib/"
-cp /usr/local/lib/librcsc.so.19.0.0 "$DEPLOY_DIR/lib/"
-cp /usr/local/lib/librcsc.so.19 "$DEPLOY_DIR/librcsc.so.19"
+if [ -f "$INSTALL_PREFIX/lib/librcsc.so.19" ]; then
+    cp "$INSTALL_PREFIX/lib/librcsc.so.19" "$DEPLOY_DIR/lib/"
+fi
+if [ -f "$INSTALL_PREFIX/lib/librcsc.so.19.0.0" ]; then
+    cp "$INSTALL_PREFIX/lib/librcsc.so.19.0.0" "$DEPLOY_DIR/lib/"
+    cp "$INSTALL_PREFIX/lib/librcsc.so.19.0.0" "$DEPLOY_DIR/librcsc.so.19" 2>/dev/null || true
+fi
+if [ -f "$INSTALL_PREFIX/lib/librcsc.so.19" ] && [ ! -f "$DEPLOY_DIR/lib/librcsc.so.19" ]; then
+    cp "$INSTALL_PREFIX/lib/librcsc.so.19" "$DEPLOY_DIR/librcsc.so.19"
+fi
 
 # 写 start.sh
 cat > "$DEPLOY_DIR/start.sh" <<'STARTSH'
@@ -49,13 +62,14 @@ cat > "$DEPLOY_DIR/start.sh" <<'STARTSH'
 DIR="$(cd "$(dirname "$0")" && pwd)"
 export LD_LIBRARY_PATH="${DIR}:${DIR}/lib:${LD_LIBRARY_PATH}"
 
-player="${DIR}/wxxychyzz_Player"
-coach="${DIR}/wxxychyzz_Coach"
+team_name="${ROBOCUP2D_TEAM_NAME:-wxxychyzz}"
+player="${DIR}/${team_name}_Player"
+coach="${DIR}/${team_name}_Coach"
 config="${DIR}/data/player.conf"
 coach_config="${DIR}/data/coach.conf"
 config_dir="${DIR}/data/formations-dt"
 
-teamname="wxxychyzz"
+teamname="$team_name"
 host="localhost"
 port=6000
 coach_port=6002
@@ -88,18 +102,19 @@ while [ $i -le ${number} ]; do
 done
 [ "${usecoach}" = "true" ] && "${coach}" ${coachopt} &
 
-echo "[wxxychyzz] All ${number} players + coach launched."
+echo "[${teamname}] All ${number} players + coach launched."
 STARTSH
 
 # 写 kill.sh
 cat > "$DEPLOY_DIR/kill.sh" <<'KILLSH'
 #!/bin/bash
-echo "[wxxychyzz] Stopping..."
-pkill -f wxxychyzz_Player 2>/dev/null
-pkill -f wxxychyzz_Coach 2>/dev/null
+team_name="${ROBOCUP2D_TEAM_NAME:-wxxychyzz}"
+echo "[${team_name}] Stopping..."
+pkill -f "${team_name}_Player" 2>/dev/null
+pkill -f "${team_name}_Coach" 2>/dev/null
 sleep 1
-pkill -9 -f wxxychyzz_Player 2>/dev/null
-pkill -9 -f wxxychyzz_Coach 2>/dev/null
+pkill -9 -f "${team_name}_Player" 2>/dev/null
+pkill -9 -f "${team_name}_Coach" 2>/dev/null
 KILLSH
 
 chmod +x "$DEPLOY_DIR/start.sh" "$DEPLOY_DIR/kill.sh"
@@ -108,4 +123,4 @@ echo "[Phase 4/5] 部署完成"
 ls -lh "$DEPLOY_DIR/"
 
 # 验证二进制可执行
-LD_LIBRARY_PATH="$DEPLOY_DIR" "$DEPLOY_DIR/wxxychyzz_Player" --help 2>&1 | head -2
+LD_LIBRARY_PATH="$DEPLOY_DIR" "${DEPLOY_DIR}/${TEAM_NAME}_Player" --help 2>&1 | head -2

@@ -23,8 +23,9 @@ wsl --install -d Ubuntu-24.04
 # 例如把它放到 D:\robocup2d_setup
 # WSL2 中访问：cd /mnt/d/robocup2d_setup
 
-# 或直接拷贝到 Linux 内
-cp -r /mnt/c/Users/luotingcheng/Desktop/robocup2d_setup ~/robocup2d_setup
+# 或直接拷贝到 Linux 内（可先设置变量）
+WINDOWS_SETUP_DIR="${WINDOWS_SETUP_DIR:-/mnt/c/Users/$USER/Desktop/robocup2d_setup}"
+cp -r "$WINDOWS_SETUP_DIR" ~/robocup2d_setup
 cd ~/robocup2d_setup
 
 # 一键装

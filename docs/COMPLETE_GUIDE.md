@@ -1,5 +1,13 @@
 # RoboCup 2D 仿真足球队 — 从 0 到 1 完整指南
 
+> 使用示例变量：
+> ```bash
+> export OPPONENT_ROOT="${HOME}/robocup2d_opponents"
+> export TEAM_NAME=wxxychyzz
+> ```
+
+
+
 > 在 Ubuntu 24.04 LTS x86_64 上从零搭建参赛队伍 wxxychyzz，含训练 + 可视化。
 
 ## 目录
@@ -157,7 +165,7 @@ cp /usr/local/lib/librcsc.so.19 ~/wxxychyzz/librcsc.so.19
 ```bash
 # 假设你有 AHUTI 等顶尖队伍二进制
 mkdir -p ~/vv1
-cp -r "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI/"* ~/vv1/
+cp -r "${OPPONENT_ROOT}/AHUTI/"* ~/vv1/
 mv ~/vv1/AHUTI_Player ~/vv1/wxxychyzz_Player
 mv ~/vv1/AHUTI_Coach ~/vv1/wxxychyzz_Coach
 sed -i 's/AHUTI/wxxychyzz/g' ~/vv1/data/player.conf ~/vv1/data/coach.conf
@@ -250,7 +258,7 @@ cat > ~/watch_match.sh <<'EOF'
 #!/bin/bash
 # 一键启动 wxxychyzz vs 对手 + 监视器
 OPP="${1:-AHUTI}"
-OPP_BASE="/home/ltc/2025可执行二进制/可执行二进制/5.24"
+OPP_BASE="${OPPONENT_ROOT}"
 OPP_DIR="$OPP_BASE/$OPP"
 
 # 清理
@@ -319,7 +327,7 @@ cd /tmp && rcssserver server::auto_mode=true
 ~/wxxychyzz/start.sh
 
 # 终端 4（可选）: 对手
-cd "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" && bash start.sh
+cd "${OPPONENT_ROOT}/AHUTI" && bash start.sh
 ```
 
 ### 5.3 实时看比分（无监视器）
@@ -356,7 +364,7 @@ killall -9 rcssserver rcssmonitor.AppImage
 
 ```bash
 ~/wxxychyzz_versions/test_one.sh ~/wxxychyzz \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/MASXY1" 600
+    "${OPPONENT_ROOT}/MASXY1" 600
 # 输出: "MASXY1 wxxy:N opp:M cycle:C status:OK"
 ```
 
@@ -373,7 +381,7 @@ killall -9 rcssserver rcssmonitor.AppImage
 
 ```bash
 ~/repeated_test.sh ~/wxxychyzz \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 5
+    "${OPPONENT_ROOT}/AHUTI" 5
 # 输出: "胜 X | 平 Y | 负 Z（5 场）"
 ```
 
@@ -477,7 +485,7 @@ chmod +x ~/vv2/start.sh ~/vv2/kill.sh
 
 # 测试
 ~/wxxychyzz_versions/test_one.sh ~/vv2 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+    "${OPPONENT_ROOT}/AHUTI" 600
 ```
 
 ### 7.3 路径 B：MAPPO 自对战（2-4 周 / 2-4 GPU）
@@ -491,7 +499,7 @@ chmod +x ~/vv2/start.sh ~/vv2/kill.sh
 mkdir -p ~/training_data/ahuti_matches
 for i in $(seq 1 20); do
     ~/wxxychyzz_versions/test_one.sh ~/wxxychyzz \
-        "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+        "${OPPONENT_ROOT}/AHUTI" 600
     cp /tmp/incomplete.rcl ~/training_data/ahuti_matches/match_$i.rcl
 done
 
@@ -516,7 +524,7 @@ EOF
 
 # 4. 重测验证
 ~/repeated_test.sh ~/wxxychyzz \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 10
+    "${OPPONENT_ROOT}/AHUTI" 10
 ```
 
 ---

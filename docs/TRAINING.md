@@ -1,5 +1,13 @@
 # wxxychyzz 训练手册
 
+> 使用示例变量：
+> ```bash
+> export OPPONENT_ROOT="${HOME}/robocup2d_opponents"
+> export TEAM_NAME=wxxychyzz
+> ```
+
+
+
 ## 训练目标：从 vv1（AHUTI 同级）超越 AHUTI
 
 vv1 当前实力 = AHUTI 镜像 = 50/50 胜率
@@ -188,7 +196,7 @@ cp ~/vv1/start.sh ~/vv1/kill.sh ~/vv2/
 
 # 测试
 ~/wxxychyzz_versions/test_one.sh ~/vv2 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+    "${OPPONENT_ROOT}/AHUTI" 600
 ```
 
 ### 阶段 4：评估和迭代
@@ -196,7 +204,7 @@ cp ~/vv1/start.sh ~/vv1/kill.sh ~/vv2/
 ```bash
 # 跑 10 场 vs AHUTI 取均值
 ~/repeated_test.sh ~/vv2 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 10
+    "${OPPONENT_ROOT}/AHUTI" 10
 
 # 期望：胜率提升至 55-65%
 ```
@@ -317,7 +325,7 @@ register_env("robocup2d", env_creator)
 config = (
     PPOConfig()
     .environment("robocup2d", env_config={
-        "opponent_dir": "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI"
+        "opponent_dir": "${OPPONENT_ROOT}/AHUTI"
     })
     .multi_agent(
         policies={"shared_policy": (None, obs_space, act_space, {})},
@@ -368,7 +376,7 @@ for i in $(seq 1 20); do
     echo "Match $i/20"
     rm -f /tmp/incomplete.*
     ~/wxxychyzz_versions/test_one.sh ~/vv1 \
-        "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+        "${OPPONENT_ROOT}/AHUTI" 600
     cp /tmp/incomplete.rcg ~/training_data/ahuti_matches/match_$i.rcg
     cp /tmp/incomplete.rcl ~/training_data/ahuti_matches/match_$i.rcl
 done
@@ -427,7 +435,7 @@ nano ~/vv2/data/formations-dt/defense-formation.conf
 
 # 测试
 ~/repeated_test.sh ~/vv2 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 10
+    "${OPPONENT_ROOT}/AHUTI" 10
 ```
 
 ---
@@ -473,8 +481,8 @@ nano ~/vv2/data/formations-dt/defense-formation.conf
 diff <(grep "wxxy:" ~/vv1_results.log) <(grep "wxxy:" ~/vv2_results.log)
 
 # 3. 回归测试（确保没变弱）
-~/repeated_test.sh ~/vv2 "/home/ltc/2025可执行二进制/可执行二进制/5.24/MASXY1" 5
-~/repeated_test.sh ~/vv2 "/home/ltc/2025可执行二进制/可执行二进制/5.24/MASXY2" 5
+~/repeated_test.sh ~/vv2 "${OPPONENT_ROOT}/MASXY1" 5
+~/repeated_test.sh ~/vv2 "${OPPONENT_ROOT}/MASXY2" 5
 
 # 4. 替换为 vv2
 cp -r ~/vv2/* ~/wxxychyzz/

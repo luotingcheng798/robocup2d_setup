@@ -250,3 +250,40 @@ pgrep -c -f wxxychyzz_Player    # 应输出 11
 ```
 
 如果以上 3 步都通过，恭喜，安装成功！
+
+---
+
+## 传承元信息（推荐提交与交接时保持）
+
+### 版本
+
+- 当前版本：`1.1.0`
+- 变更日志：`CHANGELOG.md`
+
+### 复用参数（所有脚本支持）
+
+安装和启动脚本支持以下可覆盖环境变量，迁移到新机器时可直接复用：
+
+```bash
+export ROBOCUP2D_WORK_DIR="$HOME/robocup2d"
+export ROBOCUP2D_TEAM_NAME="wxxychyzz"
+export ROBOCUP2D_TEAM_DIR="$HOME/${ROBOCUP2D_TEAM_NAME}"
+export ROBOCUP2D_SERVER_VERSION="19.0.0"
+export ROBOCUP2D_MONITOR_VERSION="19.0.1"
+export ROBOCUP2D_INSTALL_PREFIX="/usr/local"
+```
+
+### 目录新增
+
+`VERSION` 和 `CHANGELOG.md` 用于记录长期版本信息，后续每次更新都应先更新：
+
+```bash
+echo "1.1.1" > VERSION
+echo "- 2026-06-08：更新说明" >> CHANGELOG.md
+```
+
+### 贡献与交接建议
+
+1. 先更新 `VERSION`，再追加对应 `CHANGELOG.md`。
+2. 修改脚本行为时保持向后兼容（默认值仍可运行）。
+3. 文档中出现个人机器路径请替换为变量（建议使用 `OPPONENT_ROOT`）。

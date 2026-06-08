@@ -1,15 +1,20 @@
 #!/bin/bash
 # Phase 3: 编译安装 librcsc（含 GCC 13 兼容修复）
 
-set -e
+set -euo pipefail
 
-SRC_DIR="$HOME/robocup2d/team"
+WORK_DIR="${ROBOCUP2D_WORK_DIR:-$HOME/robocup2d}"
+SRC_DIR="${ROBOCUP2D_TEAM_SRC_DIR:-$WORK_DIR/team}"
+INSTALL_PREFIX="${ROBOCUP2D_INSTALL_PREFIX:-/usr/local}"
+LIBRCSC_REPO="${ROBOCUP2D_LIBRCSC_REPO:-https://github.com/helios-base/librcsc.git}"
+GIT_DEPTH="${ROBOCUP2D_GIT_DEPTH:-1}"
+
 mkdir -p "$SRC_DIR"
 cd "$SRC_DIR"
 
 echo "[Phase 3/5] 克隆 librcsc..."
 if [ ! -d "librcsc" ]; then
-    git clone --depth=1 https://github.com/helios-base/librcsc.git
+    git clone --depth="$GIT_DEPTH" "$LIBRCSC_REPO" librcsc
 fi
 cd librcsc
 
@@ -31,7 +36,7 @@ import re
 with open('$f') as fp:
     content = fp.read()
 content = re.sub(
-    r'(#include <netinet/in\.h>)',
+    r'(#include <netinet/in.h>)',
     r'\1\n#include <arpa/inet.h>',
     content, count=1)
 with open('$f', 'w') as fp:
@@ -44,7 +49,7 @@ done
 # 编译
 mkdir -p build && cd build
 echo "[Phase 3/5] 配置 cmake..."
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX"
 
 # 修复 3：config.h 中 HAVE_NETINET_IN_H
 if [ -f config.h ] && grep -q "/\* #undef HAVE_NETINET_IN_H \*/" config.h; then
@@ -60,5 +65,5 @@ sudo make install
 sudo ldconfig
 
 # 验证
-ls /usr/local/lib/librcsc.so.19* | head -3
+ls "$INSTALL_PREFIX/lib/librcsc.so.19"* | head -3
 echo "[Phase 3/5] 完成"

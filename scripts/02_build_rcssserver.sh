@@ -1,29 +1,38 @@
 #!/bin/bash
-# Phase 2: 编译安装 rcssserver-19.0.0
+# Phase 2: 编译安装 rcssserver
 # 普通用户运行（脚本内 sudo 提权安装）
 
-set -e
+set -euo pipefail
 
-VERSION="19.0.0"
-SRC_DIR="$HOME/robocup2d/server"
+VERSION="${ROBOCUP2D_SERVER_VERSION:-19.0.0}"
+WORK_DIR="${ROBOCUP2D_WORK_DIR:-$HOME/robocup2d}"
+SERVER_DIR="${ROBOCUP2D_SERVER_DIR:-$WORK_DIR/server}"
+INSTALL_PREFIX="${ROBOCUP2D_INSTALL_PREFIX:-/usr/local}"
+CONF_FILE="${ROBOCUP2D_LD_CONF_FILE:-$INSTALL_PREFIX/etc/ld.so.conf.d/rcssserver.conf}"
+SHARED_LIB_DIR="${INSTALL_PREFIX}/lib"
+
+SRC_DIR="$SERVER_DIR"
 mkdir -p "$SRC_DIR"
 cd "$SRC_DIR"
 
+ARCHIVE="rcssserver-${VERSION}.tar.gz"
+EXTRACTED="rcssserver-${VERSION}"
+URL="https://github.com/rcsoccersim/rcssserver/releases/download/rcssserver-${VERSION}/rcssserver-${VERSION}.tar.gz"
+
 echo "[Phase 2/5] 下载 rcssserver-$VERSION ..."
-if [ ! -f "rcssserver-${VERSION}.tar.gz" ]; then
-    wget -q --show-progress \
-        "https://github.com/rcsoccersim/rcssserver/releases/download/rcssserver-${VERSION}/rcssserver-${VERSION}.tar.gz"
+if [ ! -f "$ARCHIVE" ]; then
+    wget -q --show-progress "$URL"
 fi
 
-if [ ! -d "rcssserver-${VERSION}" ]; then
-    tar xzf "rcssserver-${VERSION}.tar.gz"
+if [ ! -d "$EXTRACTED" ]; then
+    tar xzf "$ARCHIVE"
 fi
 
-cd "rcssserver-${VERSION}"
+cd "$EXTRACTED"
 mkdir -p build && cd build
 
 echo "[Phase 2/5] 配置 cmake..."
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake .. -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX"
 
 echo "[Phase 2/5] 编译（约 5-10 分钟）..."
 make -j$(nproc)
@@ -32,16 +41,21 @@ echo "[Phase 2/5] 安装..."
 sudo make install
 
 # 配置共享库路径
-echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/rcssserver.conf > /dev/null
+if [ ! -d "$(dirname "$CONF_FILE")" ]; then
+    mkdir -p "$(dirname "$CONF_FILE")"
+fi
+if ! grep -q "$SHARED_LIB_DIR" "$CONF_FILE" 2>/dev/null; then
+    echo "$SHARED_LIB_DIR" | sudo tee "$CONF_FILE" > /dev/null
+fi
 sudo ldconfig
 
 # 加 LD_LIBRARY_PATH 到 .bashrc（不重复添加）
-if ! grep -q "LD_LIBRARY_PATH=/usr/local/lib" ~/.bashrc; then
-    echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+if ! grep -q "LD_LIBRARY_PATH=$SHARED_LIB_DIR" ~/.bashrc; then
+    echo "export LD_LIBRARY_PATH=$SHARED_LIB_DIR:\$LD_LIBRARY_PATH" >> ~/.bashrc
 fi
 
 # 验证
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="$SHARED_LIB_DIR:$LD_LIBRARY_PATH"
 VER=$(rcssserver server::help 2>&1 | head -1)
 echo "[Phase 2/5] 完成: $VER"
 

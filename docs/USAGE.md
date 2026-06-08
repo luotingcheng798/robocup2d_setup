@@ -1,5 +1,13 @@
 # wxxychyzz vv1 完整使用文档
 
+> 使用示例变量：
+> ```bash
+> export OPPONENT_ROOT="${HOME}/robocup2d_opponents"
+> export TEAM_NAME=wxxychyzz
+> ```
+
+
+
 ## 目录
 1. [快速开始](#1-快速开始)
 2. [文件结构详解](#2-文件结构详解)
@@ -39,7 +47,7 @@ cd /tmp && rcssserver server::auto_mode=true
 ~/vv1/start.sh
 
 # 终端 3：对手 AHUTI（右侧）
-cd "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI"
+cd "${OPPONENT_ROOT}/AHUTI"
 bash start.sh
 
 # 比赛会自动 kick-off。比赛文件存在 /tmp/incomplete.rcg / .rcl
@@ -183,7 +191,7 @@ EOF
 chmod +x ~/run_vv1_match.sh
 
 # 使用方式
-~/run_vv1_match.sh "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI/start.sh"
+~/run_vv1_match.sh "${OPPONENT_ROOT}/AHUTI/start.sh"
 ```
 
 ### 3.3 比赛过程实时监控
@@ -220,7 +228,7 @@ ls -lh /tmp/*.rcg /tmp/*.rcl
 
 # 例：vv1 vs MASXY1，超时 600 秒
 ~/wxxychyzz_versions/test_one.sh ~/vv1 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/MASXY1" 600
+    "${OPPONENT_ROOT}/MASXY1" 600
 # 输出: "MASXY1 wxxy:N opp:M cycle:C status:OK"
 ```
 
@@ -232,7 +240,7 @@ cat > ~/batch_test_vv1.sh <<'EOF'
 # 批量测试 vv1 vs 所有 2025 对手
 WXXY_DIR="${1:-$HOME/vv1}"
 RESULT_FILE="${HOME}/vv1_batch_results.tsv"
-OPPONENTS_BASE="/home/ltc/2025可执行二进制/可执行二进制/5.24"
+OPPONENTS_BASE="${OPPONENT_ROOT}"
 
 echo -e "对手\t比分\t用时\t状态" > "$RESULT_FILE"
 
@@ -300,7 +308,7 @@ EOF
 chmod +x ~/repeated_test.sh
 
 # 例：vv1 vs AHUTI 跑 5 场
-~/repeated_test.sh ~/vv1 "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 5
+~/repeated_test.sh ~/vv1 "${OPPONENT_ROOT}/AHUTI" 5
 ```
 
 ---
@@ -431,7 +439,7 @@ cp ~/robocup2d/team/Cyrus2DBase-cyrus2d/build/bin/sample_player ~/vv2/wxxychyzz_
 
 # 测试
 ~/wxxychyzz_versions/test_one.sh ~/vv2 \
-    "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+    "${OPPONENT_ROOT}/AHUTI" 600
 ```
 
 ### 6.3 路径 B：MAPPO 多智能体强化学习
@@ -508,7 +516,7 @@ torch.save(model.actor.state_dict(), '~/vv3/mappo_actor.pt')
 # 步骤 1：录制 AHUTI vs vv1 多场比赛
 for i in $(seq 1 20); do
     ~/wxxychyzz_versions/test_one.sh ~/vv1 \
-        "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 600
+        "${OPPONENT_ROOT}/AHUTI" 600
     cp /tmp/incomplete.rcg ~/match_logs/match_$i.rcg
     cp /tmp/incomplete.rcl ~/match_logs/match_$i.rcl
 done
@@ -527,7 +535,7 @@ cp -r ~/vv1/* ~/vv2/
 # 修改 ~/vv2/data/formations-dt/normal-formation.conf
 
 # 步骤 4：迭代测试
-~/repeated_test.sh ~/vv2 "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" 10
+~/repeated_test.sh ~/vv2 "${OPPONENT_ROOT}/AHUTI" 10
 ```
 
 ### 6.5 训练时长 vs 预期效果

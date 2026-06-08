@@ -1,5 +1,13 @@
 # wxxychyzz vv1 速查卡
 
+> 使用示例变量：
+> ```bash
+> export OPPONENT_ROOT="${HOME}/robocup2d_opponents"
+> export TEAM_NAME=wxxychyzz
+> ```
+
+
+
 ## 一行启动
 ```bash
 # Server
@@ -9,7 +17,7 @@ LD_LIBRARY_PATH=/usr/local/lib rcssserver server::auto_mode=true &
 ~/vv1/start.sh
 
 # 对手（举例：AHUTI）
-cd "/home/ltc/2025可执行二进制/可执行二进制/5.24/AHUTI" && bash start.sh
+cd "${OPPONENT_ROOT}/AHUTI" && bash start.sh
 
 # 看比分
 grep "referee goal_l\|referee goal_r" /tmp/incomplete.rcl | grep -v "kick\|catch\|offside"
